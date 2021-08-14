@@ -2,9 +2,12 @@
 
 import datetime
 import json
+import os
 import socket
 import struct
 import time
+
+import daemon
 
 def main():
 	try:
@@ -19,6 +22,10 @@ def main():
 
 		minute = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M')
 		ms = ping('192.168.1.10')
+		if ms is None:
+			print(minute, 'timed out')
+		else:
+			print(minute, ms, 'ms')
 		times.append((minute, ms))
 		with open('times.json', 'w') as f:
 			json.dump(times[-keep:], f)
@@ -36,17 +43,15 @@ def ping(destination):
 		try:
 			data, source = sock.recvfrom(256)
 		except socket.timeout:
-			print('timed out')
-			return
+			return None
 		message_type, message_code, check, identifier, sequence_number = struct.unpack('bbHHh', data[:8])
 		if source == (destination, 0) and message_type == ICMP.ECHO_REPLY and data[8:] == payload:
 			ms = (time.time_ns() - start_time) // 1_000_000
-			print(ms, 'ms')
 			return ms
 		else:
 			print('got unexpected packet from %s:' % source[0], message_type, data[8:])
 	else:
-		print('timed out')
+		return None
 
 def encode(payload: bytes):
 	# calculate checksum with check set to 0
@@ -98,4 +103,7 @@ class ICMP:
 	ECHO_REQUEST = 8
 
 if __name__ == '__main__':
-	main()
+	print('daemonizing...')
+	with daemon.DaemonContext(working_directory=os.getcwd(), umask=0o022,
+			stdout=open('stdout', 'w+'), stderr=open('stderr', 'w+'), prevent_core=False):
+		main()
