@@ -20,6 +20,7 @@
 				'tick': {'format': '%a %H:%M'}, // https://github.com/d3/d3-time-format#locale_format
 			},
 		},
+		'legend': {'show': false},
 	});
 	const columns = [
 		['x', ...times.map(([ts, ms]) => new Date(ts + 'Z'))],

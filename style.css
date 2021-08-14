@@ -1,0 +1,25 @@
+body {
+	background-color: #111;
+	color: #eee;
+	font-family: sans-serif;
+}
+
+div#chart {
+	max-width: 960px;
+	margin: 0 auto;
+}
+div#chart .c3-axis {
+	fill: #fff;
+}
+div#chart .c3-axis path,
+div#chart .c3-axis .tick line {
+	stroke: #fff;
+}
+div#chart .c3-tooltip {
+	color: #111;
+}
+
+section {
+	max-width: 960px;
+	margin: 0 auto;
+}
