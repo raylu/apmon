@@ -1,11 +1,29 @@
 #!/usr/bin/env python3
 
+import datetime
+import json
 import socket
 import struct
 import time
 
 def main():
-	ping('192.168.1.10')
+	try:
+		with open('times.json', 'r') as f:
+			times = json.load(f)
+	except FileNotFoundError:
+		times = []
+	keep = 7 * 24 * 60 # keep a week worth of minutely data
+
+	while True:
+		start_time = time.time()
+
+		minute = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M')
+		ms = ping('192.168.1.10')
+		times.append((minute, ms))
+		with open('times.json', 'w') as f:
+			json.dump(times[-keep:], f)
+
+		time.sleep(60 - (time.time() - start_time))
 
 def ping(destination):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.getprotobyname('icmp'))
@@ -22,8 +40,9 @@ def ping(destination):
 			return
 		message_type, message_code, check, identifier, sequence_number = struct.unpack('bbHHh', data[:8])
 		if source == (destination, 0) and message_type == ICMP.ECHO_REPLY and data[8:] == payload:
-			print((time.time_ns() - start_time) // 1_000_000, 'ms')
-			break
+			ms = (time.time_ns() - start_time) // 1_000_000
+			print(ms, 'ms')
+			return ms
 		else:
 			print('got unexpected packet from %s:' % source[0], message_type, data[8:])
 	else:
